@@ -1,0 +1,6 @@
+# /create-hackathon-slide が生成する各チームの成果物はコミットしない
+output/
+
+# Python 実行ゴミ
+__pycache__/
+.pytest_cache/

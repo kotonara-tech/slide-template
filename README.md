@@ -2,6 +2,12 @@
 
 公式サイト https://kotonara.tech/ の配色・トーンに合わせた PowerPoint テーマ一式です。
 
+## ことテク2026 ハッカソン チーム発表テンプレート
+
+成果発表会（発表8分＋デモ2分＋質疑3分）用の9枚構成テンプレートは `hackathon-2026/` にあります。
+Claude Code で `/create-hackathon-slide <チームの成果物リポジトリのパスまたはURL>` を実行すれば、
+成果物を読んで Markdown を埋め、このテーマの PPTX まで生成します。詳細は `hackathon-2026/README.md` を参照。
+
 ## ファイル
 
 | ファイル | 内容 |

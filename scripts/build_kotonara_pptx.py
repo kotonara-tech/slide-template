@@ -6,7 +6,8 @@ build_kotonara_pptx.py
 
 生成物:
   1. kototech-aug-hackathon-kickoff-kotonara.pptx  … 本編19枚
-  2. kotonara-brand-template.pptx                   … 同一テーマ／マスターの空テンプレート
+  2. kotonara-brand-template-nologo-2.pptx          … 同一テーマ／マスターの空テンプレート（ロゴなし版2）
+     ※ メインの kotonara-brand-template.pptx とロゴなし版1は build_kotonara_theme_pptx.py で作る
 
 配色・フォントを変えたいときは、下の CONFIG だけを書き換えて再実行すればよい。
 theme1.xml のカラースキーム／フォントスキームとして書き出されるため、
@@ -96,7 +97,7 @@ CONFIG = {
 BASE_DIR      = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MD_PATH       = os.path.join(BASE_DIR, "kototech-aug-hackathon-kickoff-slides.md")
 DECK_PATH     = os.path.join(BASE_DIR, "kototech-aug-hackathon-kickoff-kotonara.pptx")
-TEMPLATE_PATH = os.path.join(BASE_DIR, "kotonara-brand-template.pptx")
+TEMPLATE_PATH = os.path.join(BASE_DIR, "kotonara-brand-template-nologo-2.pptx")
 
 
 # =============================================================================

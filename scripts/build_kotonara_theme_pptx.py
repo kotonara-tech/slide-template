@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-build_kototech_pptx.py
-======================
-ことテク（ことならテックプロジェクト）汎用テーマで、Markdown 原稿から PPTX を作る。
-イベント・営業資料などに使う汎用テンプレート。フッターの文言は既定で空欄。
+build_kotonara_theme_pptx.py
+============================
+ことなら（kotonara.tech）ブランドテーマで、Markdown 原稿から PPTX を作る。
+イベント資料・営業資料などに使う汎用テンプレート。フッターの文言は既定で空欄。
 
-ビルド機構は hackathon-2026/scripts/build_hackathon_slide_pptx.py をそのまま読み込んで使う
-（テーマ・5レイアウト・md の書式・表の描画）。このスクリプトで上書きするのは次の点だけ:
+雛形は3種類（リポジトリ直下）:
+  kotonara-brand-template.pptx          メイン。メインの緑 #4D9622、「ことテク」ロゴ入り
+  kotonara-brand-template-nologo-1.pptx ロゴなし版1。メインと同じテーマでロゴなし
+  kotonara-brand-template-nologo-2.pptx ロゴなし版2。旧テンプレート（緑 #1A832A）。このスクリプトでは作らない
 
-  - メインの緑（accent1）: 4D9622（元テンプレートは 1A832A）
+ビルド機構は hackathon-2026/scripts/build_hackathon_slide_pptx.py を読み込んで使う
+（テーマ・5レイアウト・md の書式・表の描画）。読み込むだけで、そのファイルには書き込まない。
+このスクリプトで上書きするのは次の点だけ:
+
+  - メインの緑（accent1）: 4D9622
   - フッター: 既定は空欄（--footer で指定）
-  - 表紙の帯のキャッチコピー「ひらめきを、カタチに。」: 13pt（元より 2pt 小さい）。
-    帯の左に白いロゴを置き、キャッチコピーはロゴの右に、下端をロゴの下端にそろえる
-  - 「ことテク」ロゴをスライドレイアウトに置く
-      表紙: 帯の左に白いロゴ
+  - 表紙の帯のキャッチコピー「ひらめきを、カタチに。」: 13pt
+  - 「ことテク」ロゴをスライドレイアウトに置く（--no-logo で置かない）
+      表紙: 帯の左に白いロゴ。キャッチコピーはロゴの右に置き、下端をロゴの下端にそろえる
       タイトルとコンテンツ／表スライド／セクション見出し: 右上に緑のロゴ
       クロージング（反転）: 置かない
     PNG を表示し、SVG を高画質版として埋め込む（PowerPoint 2016 以降は SVG で描画する）
@@ -23,14 +28,13 @@ build_kototech_pptx.py
     月のカレンダーとして描く（後述）
 
 使い方（リポジトリルートで）:
-  python kototech-theme/scripts/build_kototech_pptx.py <md> [-o out.pptx] [--footer 文言] [--draft]
+  python scripts/build_kotonara_theme_pptx.py <md> [-o out.pptx] [--footer 文言] [--no-logo] [--draft]
 
-  -o を省くと <md の場所>/<md 名>-kototech.pptx に出力する。
+  -o を省くと <md の場所>/<md 名>-kotonara.pptx に出力する。
   --draft を付けると {{...}} の残存を許す（社内確認用）。付けないと、1つでも残っていれば失敗する。
 
-雛形 PPTX（kototech-theme/kototech-brand-template.pptx）の再生成:
-  python kototech-theme/scripts/build_kototech_pptx.py kototech-theme/template.md \\
-      -o kototech-theme/kototech-brand-template.pptx
+雛形2種（メインとロゴなし版1）の再生成:
+  python scripts/build_kotonara_theme_pptx.py --build-templates
 
 カレンダー表の書き方:
   | 日 | 月 | 火 | 水 | 木 | 金 | 土 | この週のこと |
@@ -61,16 +65,18 @@ from pptx.opc.package import Part
 from pptx.opc.packuri import PackURI
 from pptx.util import Emu
 
-THEME_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPO_ROOT = os.path.dirname(THEME_DIR)
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_SCRIPT = os.path.join(REPO_ROOT, "hackathon-2026", "scripts", "build_hackathon_slide_pptx.py")
-ASSETS = os.path.join(THEME_DIR, "assets")
+ASSETS = os.path.join(REPO_ROOT, "assets")
+TEMPLATE_MD = os.path.join(REPO_ROOT, "kotonara-brand-template.md")
+TEMPLATE_MAIN = os.path.join(REPO_ROOT, "kotonara-brand-template.pptx")
+TEMPLATE_NOLOGO_1 = os.path.join(REPO_ROOT, "kotonara-brand-template-nologo-1.pptx")
 
 ACCENT1 = "4D9622"
 COVER_CATCH_PT = 13
-LOGO = (os.path.join(ASSETS, "kototech-logo.png"), os.path.join(ASSETS, "kototech-logo.svg"))
-LOGO_WHITE = (os.path.join(ASSETS, "kototech-logo-white.png"),
-              os.path.join(ASSETS, "kototech-logo-white.svg"))
+LOGO = (os.path.join(ASSETS, "kotonara-logo.png"), os.path.join(ASSETS, "kotonara-logo.svg"))
+LOGO_WHITE = (os.path.join(ASSETS, "kotonara-logo-white.png"),
+              os.path.join(ASSETS, "kotonara-logo-white.svg"))
 
 SVG_EXT_URI = "{96DAC541-7B7A-43D3-8B79-37D633B846F1}"
 ASVG_NS = "http://schemas.microsoft.com/office/drawing/2016/SVG/main"
@@ -88,7 +94,7 @@ def load_base(footer: str):
     B.CONFIG["colors"]["accent1"] = ACCENT1
     B.CONFIG["sizes"]["cover_catch"] = COVER_CATCH_PT
     B.CONFIG["footer_text"] = footer
-    B.CONFIG["doc_title"] = "ことテク"
+    B.CONFIG["doc_title"] = "ことならテック"
     B.CONFIG["doc_author"] = "ことならテックプロジェクト"
     return B
 
@@ -296,10 +302,12 @@ def layout_index(B, idx, last, spec, override):
     return B.L_CONTENT
 
 
-def build_deck(B, specs, layouts, path):
+def build_deck(B, specs, layouts, path, with_logo=True, doc_title=None):
     prs = B.open_base()
-    place_logos(B, prs)
-    prs.core_properties.title = " ".join(t for t in (specs[0].title, specs[0].subtitle) if t)
+    if with_logo:
+        place_logos(B, prs)
+    prs.core_properties.title = doc_title or " ".join(
+        t for t in (specs[0].title, specs[0].subtitle) if t)
     prs.core_properties.author = B.CONFIG["doc_author"]
     sizes = B.CONFIG["sizes"]
     last = len(specs) - 1
@@ -342,7 +350,7 @@ def build_deck(B, specs, layouts, path):
 # 検証
 # =============================================================================
 
-def verify(B, path, specs, draft):
+def verify(B, path, specs, draft, with_logo=True):
     ok = True
     lines = []
 
@@ -360,8 +368,12 @@ def verify(B, path, specs, draft):
         for key, val in B.CONFIG["colors"].items():
             if key != "accent1":
                 check(f"theme1.xml {key}={val}", f'<a:{key}><a:srgbClr val="{val}"/></a:{key}>' in theme)
-        check("SVG ロゴ 2点（緑・白）を同梱",
-              {"ppt/media/kototech-logo.svg", "ppt/media/kototech-logo-white.svg"} <= set(names))
+        svgs = {"ppt/media/kotonara-logo.svg", "ppt/media/kotonara-logo-white.svg"}
+        if with_logo:
+            check("SVG ロゴ 2点（緑・白）を同梱", svgs <= set(names))
+        else:
+            check("ロゴなし: 画像を同梱していない",
+                  not [n for n in names if n.startswith("ppt/media/")])
 
         direct = []
         for n in names:
@@ -375,8 +387,9 @@ def verify(B, path, specs, draft):
         check("ロゴはスライドではなくレイアウトにある", not slide_pics, str(slide_pics))
 
     prs = Presentation(path)
-    want = {"表紙（タイトル）": 1, "タイトルとコンテンツ": 1, "表スライド": 1,
-            "セクション見出し": 1, "クロージング（反転）": 0}
+    n = 1 if with_logo else 0
+    want = {"表紙（タイトル）": n, "タイトルとコンテンツ": n, "表スライド": n,
+            "セクション見出し": n, "クロージング（反転）": 0}
     for layout in prs.slide_layouts:
         pics = [sh for sh in layout.shapes if sh.shape_type == 13]
         check(f"レイアウト『{layout.name}』のロゴ {want.get(layout.name, 0)} 点",
@@ -404,22 +417,44 @@ def verify(B, path, specs, draft):
     return ok
 
 
-def main(argv=None):
-    ap = argparse.ArgumentParser(description="ことテク汎用テーマで md を PPTX にする")
-    ap.add_argument("md")
-    ap.add_argument("-o", "--out")
-    ap.add_argument("--footer", default="", help="フッターの文言（既定は空欄）")
-    ap.add_argument("--draft", action="store_true", help="{{...}} の残存を許す")
-    args = ap.parse_args(argv)
-
-    B = load_base(args.footer)
-    specs, layouts = parse(B, args.md)
-    out = args.out or os.path.splitext(args.md)[0] + "-kototech.pptx"
-    print(f"md から {len(specs)} スライドを読み込みました: {args.md}")
-    build_deck(B, specs, layouts, out)
+def build_one(md, out, footer="", with_logo=True, draft=False, doc_title=None):
+    B = load_base(footer)
+    specs, layouts = parse(B, md)
+    print(f"md から {len(specs)} スライドを読み込みました: {md}")
+    build_deck(B, specs, layouts, out, with_logo=with_logo, doc_title=doc_title)
     print(f"生成: {out}")
     print("-" * 60)
-    return 0 if verify(B, out, specs, args.draft) else 1
+    return verify(B, out, specs, draft, with_logo=with_logo)
+
+
+def build_templates(main_out=TEMPLATE_MAIN, nologo_out=TEMPLATE_NOLOGO_1):
+    """メイン（ロゴ入り）とロゴなし版1を kotonara-brand-template.md から作る。"""
+    ok = build_one(TEMPLATE_MD, main_out, with_logo=True,
+                   doc_title="ことならテック ブランドテンプレート")
+    print()
+    ok = build_one(TEMPLATE_MD, nologo_out, with_logo=False,
+                   doc_title="ことならテック ブランドテンプレート（ロゴなし版1）") and ok
+    return ok
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description="ことならブランドテーマで md を PPTX にする")
+    ap.add_argument("md", nargs="?")
+    ap.add_argument("-o", "--out")
+    ap.add_argument("--footer", default="", help="フッターの文言（既定は空欄）")
+    ap.add_argument("--no-logo", action="store_true", help="ロゴを置かない（ロゴなし版1のテーマ）")
+    ap.add_argument("--draft", action="store_true", help="{{...}} の残存を許す")
+    ap.add_argument("--build-templates", action="store_true",
+                    help="雛形2種（メインとロゴなし版1）をリポジトリ直下に作り直す")
+    args = ap.parse_args(argv)
+
+    if args.build_templates:
+        return 0 if build_templates() else 1
+    if not args.md:
+        ap.error("md を指定してください（雛形を作り直すときは --build-templates）")
+    out = args.out or os.path.splitext(args.md)[0] + "-kotonara.pptx"
+    ok = build_one(args.md, out, footer=args.footer, with_logo=not args.no_logo, draft=args.draft)
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

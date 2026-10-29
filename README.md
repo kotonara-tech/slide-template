@@ -8,20 +8,90 @@
 Claude Code で `/create-hackathon-slide <チームの成果物リポジトリのパスまたはURL>` を実行すれば、
 成果物を読んで Markdown を埋め、このテーマの PPTX まで生成します。詳細は `hackathon-2026/README.md` を参照。
 
-## ことテク 汎用スライドテーマ
+## テンプレート3種
 
-イベント資料・営業資料に使う汎用テーマ（メインの緑 `#4D9622`、「ことテク」ロゴ入り、フッター空欄）は
-`kototech-theme/` にあります。雛形は `kototech-theme/kototech-brand-template.pptx`。
-md から作るときは `kototech-theme/scripts/build_kototech_pptx.py` を使います。詳細は `kototech-theme/README.md` を参照。
+| ファイル | 版 | メインの緑（accent1） | 「ことテク」ロゴ | フッター |
+| --- | --- | --- | --- | --- |
+| `kotonara-brand-template.pptx` | メイン | `#4D9622` | あり | 空欄 |
+| `kotonara-brand-template-nologo-1.pptx` | ロゴなし版1 | `#4D9622` | なし | 空欄 |
+| `kotonara-brand-template-nologo-2.pptx` | ロゴなし版2（旧メイン） | `#1A832A` | なし | 「ことテク2026 2daysハッカソン」 |
+
+ふだんはメインを使います。イベント資料・営業資料のどちらにも使えるよう、フッターは空欄にしてあります
+（［挿入］＞［ヘッダーとフッター］で入力）。メインとロゴなし版1は1枚ずつ5レイアウトの見本が入っています。
+
+メインのロゴの位置:
+
+| レイアウト | ロゴ |
+| --- | --- |
+| 表紙（タイトル） | 下部の帯の左に白いロゴ。キャッチコピー『ひらめきを、カタチに。』（13pt）はロゴの右で、下端をロゴにそろえる |
+| タイトルとコンテンツ／表スライド／セクション見出し | 右上に緑のロゴ |
+| クロージング（反転） | なし（背景が緑のため） |
+
+ロゴはスライドではなくレイアウトに置いてあります。［ホーム］＞［新しいスライド］でレイアウトを選べばロゴも付きます。
+PNG（4000×1412）と SVG の両方を埋め込んであり、PowerPoint 2016 以降は SVG で描画します。
+
+`hackathon-2026/` のチーム発表テンプレートは、ロゴなし版2と同じ旧テーマのままです。
+
+### メイン・ロゴなし版1を md から作る
+
+リポジトリルートで実行します。初回は `pip install python-pptx` が必要です。
+
+```
+python scripts/build_kotonara_theme_pptx.py 原稿.md -o 出力.pptx --footer "フッターの文言"
+python scripts/build_kotonara_theme_pptx.py 原稿.md -o 出力.pptx --no-logo   # ロゴなし版1のテーマ
+```
+
+- `--footer` を省くとフッターは空欄
+- `{{...}}` が1つでも残っているとビルドは失敗する。社内確認用に残したまま作るときは `--draft` を付ける
+- md の書式は `hackathon-2026/README.md` の「md を編集するときの約束ごと」と同じ。違いは次の2点
+  - 1枚目は表紙、最後はクロージング、表があれば表スライド、それ以外はタイトルとコンテンツになる。
+    セクション見出しにしたい枚には `<!-- layout: section -->` を書く（`cover` `content` `table` `closing` も指定できる）
+  - 表スライドの枚数と位置に決まりはない
+- 自動検証: テーマの色、ロゴがレイアウトにあること、スライドに色やロゴを直接置いていないこと、`{{...}}` の残存
+
+カレンダー表: ヘッダーを `| 日 | 月 | 火 | 水 | 木 | 金 | 土 | この週のこと |` にした表は、月のカレンダーとして描きます。
+
+- 日付セルは `19` または `19 ラベル`。ラベル付きはベージュ、ラベルに「当日」を含むと緑で塗る
+- 空セルは月の外（灰色）
+- 「この週のこと」が縦に同じ文言で続くと、セルを結合する
+- 見本は `examples/kotonara-calendar-sample.md`
+
+### 雛形とロゴを作り直す
+
+```
+python scripts/build_kotonara_theme_pptx.py --build-templates     # メインとロゴなし版1
+python scripts/make_kotonara_logo.py assets/kotonara-logo-source.jpg assets
+python scripts/make_kotonara_logo.py assets/kotonara-logo-source.jpg assets --color FFFFFF --name kotonara-logo-white
+python -m pytest -q scripts/test_build_kotonara_theme_pptx.py
+```
+
+- 雛形の元は `kotonara-brand-template.md`
+- ロゴの作り直しには `pip install potracer cairosvg numpy pillow` が必要
+- `build_kotonara_theme_pptx.py` は `hackathon-2026/scripts/build_hackathon_slide_pptx.py` のテーマ生成を読み込んで使う
+  （書き込みはしない）。そちらを変えるとメインとロゴなし版1にも反映されるので、両方のテストを流す
+- `#4D9622` は `#1A832A` より明るいため、緑の上の小さい白文字は読みにくくなる。本番の投影環境で一度確認する
 
 ## ファイル
 
 | ファイル | 内容 |
 | --- | --- |
-| `kototech-aug-hackathon-kickoff-kotonara.pptx` | 本編19枚（スピーカーノート付き） |
-| `kotonara-brand-template.pptx` | 同じテーマ／スライドマスターだけを持つ雛形（表紙1枚） |
-| `scripts/build_kotonara_pptx.py` | 上記2ファイルを生成するビルドスクリプト |
-| `kototech-aug-hackathon-kickoff-slides.md` | 入力となる確定済み Markdown |
+| `kotonara-brand-template.pptx` | メインの雛形（ロゴあり） |
+| `kotonara-brand-template-nologo-1.pptx` | ロゴなし版1の雛形 |
+| `kotonara-brand-template-nologo-2.pptx` | ロゴなし版2の雛形（旧メイン、表紙1枚） |
+| `kotonara-brand-template.md` | メインとロゴなし版1の元になる md |
+| `scripts/build_kotonara_theme_pptx.py` | メインとロゴなし版1のテーマで md から PPTX を作る |
+| `scripts/make_kotonara_logo.py` | 元画像からロゴの SVG・PNG を作る |
+| `scripts/test_build_kotonara_theme_pptx.py` | 上記の受け入れテスト |
+| `assets/kotonara-logo.svg` / `.png` | 緑（`#4D9622`）のロゴ |
+| `assets/kotonara-logo-white.svg` / `.png` | 白のロゴ（表紙の帯用） |
+| `assets/kotonara-logo-source.jpg` | ロゴの元画像 |
+| `examples/kotonara-calendar-sample.md` | カレンダー表の見本 |
+| `kototech-aug-hackathon-kickoff-kotonara.pptx` | 8月キックオフ本編19枚（旧テーマ、スピーカーノート付き） |
+| `scripts/build_kotonara_pptx.py` | 旧テーマのビルドスクリプト（キックオフ本編とロゴなし版2を生成） |
+| `kototech-aug-hackathon-kickoff-slides.md` | キックオフ本編の入力 Markdown |
+
+以下は旧テーマ（ロゴなし版2）の説明です。メインとロゴなし版1は、accent1 が `#4D9622` であることと
+ロゴ・フッターの違いを除いて同じ構成です。
 
 ## テーマの中身
 
@@ -131,6 +201,6 @@ PowerPoint の GUI からそのまま差し替えられます。
 
 **新しい資料を作るとき**
 
-`kotonara-brand-template.pptx` を開いて［名前を付けて保存］するか、
-`.potx` として保存してテンプレート化してください。
+`kotonara-brand-template.pptx`（メイン）を開いて［名前を付けて保存］するか、
+`.potx` として保存してテンプレート化してください。ロゴを入れない資料はロゴなし版1を使います。
 ［ホーム］→［新しいスライド］から上記5レイアウトを選べます。

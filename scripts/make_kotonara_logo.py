@@ -3,11 +3,11 @@
 指定色の透過 SVG と高解像度 PNG を作る。
 
 使い方:
-  python make_logo.py <入力画像> <出力ディレクトリ> [--color 4D9622] [--name kototech-logo] [--png-width 4000]
+  python scripts/make_kotonara_logo.py <入力画像> <出力ディレクトリ> [--color 4D9622] [--name kotonara-logo] [--png-width 4000]
 
-  assets/ のロゴは次の2回の実行で作っている:
-    python kototech-theme/scripts/make_logo.py kototech-theme/assets/kototech-logo-source.jpg kototech-theme/assets
-    python kototech-theme/scripts/make_logo.py kototech-theme/assets/kototech-logo-source.jpg kototech-theme/assets --color FFFFFF --name kototech-logo-white
+  assets/ のロゴは次の2回の実行で作っている（リポジトリルートで）:
+    python scripts/make_kotonara_logo.py assets/kotonara-logo-source.jpg assets
+    python scripts/make_kotonara_logo.py assets/kotonara-logo-source.jpg assets --color FFFFFF --name kotonara-logo-white
 
 依存: numpy, Pillow, potracer（pip install potracer）, cairosvg
 """
@@ -70,7 +70,7 @@ def main():
     ap.add_argument("src")
     ap.add_argument("out_dir")
     ap.add_argument("--color", default="4D9622")
-    ap.add_argument("--name", default="kototech-logo", help="出力ファイル名（拡張子なし）")
+    ap.add_argument("--name", default="kotonara-logo", help="出力ファイル名（拡張子なし）")
     ap.add_argument("--png-width", type=int, default=4000)
     a = ap.parse_args()
     os.makedirs(a.out_dir, exist_ok=True)

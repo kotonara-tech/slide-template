@@ -8,6 +8,12 @@
 Claude Code で `/create-hackathon-slide <チームの成果物リポジトリのパスまたはURL>` を実行すれば、
 成果物を読んで Markdown を埋め、このテーマの PPTX まで生成します。詳細は `hackathon-2026/README.md` を参照。
 
+## ことテク 汎用スライドテーマ
+
+イベント資料・営業資料に使う汎用テーマ（メインの緑 `#4D9622`、「ことテク」ロゴ入り、フッター空欄）は
+`kototech-theme/` にあります。雛形は `kototech-theme/kototech-brand-template.pptx`。
+md から作るときは `kototech-theme/scripts/build_kototech_pptx.py` を使います。詳細は `kototech-theme/README.md` を参照。
+
 ## ファイル
 
 | ファイル | 内容 |

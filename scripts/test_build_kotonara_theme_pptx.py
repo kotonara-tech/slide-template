@@ -29,6 +29,14 @@ def logo_counts(prs):
     return {l.name: sum(1 for sh in l.shapes if sh.shape_type == 13) for l in prs.slide_layouts}
 
 
+def cover_catch_size(path):
+    import re
+    with zipfile.ZipFile(path) as z:
+        x = z.read("ppt/slideLayouts/slideLayout1.xml").decode("utf-8")
+    i = x.find("Cover Band")
+    return re.search(r'sz="(\d+)"', x[i:x.find("</p:sp>", i)]).group(1)
+
+
 def theme_xml(path):
     with zipfile.ZipFile(path) as z:
         return z.read("ppt/theme/theme1.xml").decode("utf-8")
@@ -79,6 +87,8 @@ def test_committed_templates_are_as_expected():
     assert logo_counts(Presentation(main))["タイトルとコンテンツ"] == 1
     assert set(logo_counts(Presentation(nologo1)).values()) == {0}
     assert set(logo_counts(Presentation(nologo2)).values()) == {0}
+    for path in (main, nologo1, nologo2):
+        assert cover_catch_size(path) == "1300"   # キャッチコピーは3種とも 13pt
 
 
 def test_calendar_sample(tmp_path):

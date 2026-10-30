@@ -14,7 +14,7 @@ Claude Code で `/create-hackathon-slide <チームの成果物リポジトリ�
 | --- | --- | --- | --- | --- |
 | `kotonara-brand-template.pptx` | メイン | `#4D9622` | あり | 空欄 |
 | `kotonara-brand-template-nologo-1.pptx` | ロゴなし版1 | `#4D9622` | なし | 空欄 |
-| `kotonara-brand-template-nologo-2.pptx` | ロゴなし版2（旧メイン） | `#1A832A` | なし | 「ことテク2026 2daysハッカソン」 |
+| `kotonara-brand-template-nologo-2.pptx` | ロゴなし版2（旧メイン。キャッチコピーだけ 13pt に変更） | `#1A832A` | なし | 「ことテク2026 2daysハッカソン」 |
 
 ふだんはメインを使います。イベント資料・営業資料のどちらにも使えるよう、フッターは空欄にしてあります
 （［挿入］＞［ヘッダーとフッター］で入力）。メインとロゴなし版1は1枚ずつ5レイアウトの見本が入っています。

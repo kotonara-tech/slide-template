@@ -71,7 +71,7 @@ CONFIG = {
         "cover_title":     34,
         "cover_subtitle":  17,
         "cover_body":      16,
-        "cover_catch":     15,
+        "cover_catch":     13,   # 表紙の帯のキャッチコピー（ロゴなし版2もメインに合わせて 13pt）
         "title":           30,
         "body":            18,
         "body_large":      20,

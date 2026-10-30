@@ -26,6 +26,8 @@ build_kotonara_theme_pptx.py
     それ以外はタイトルとコンテンツ。`<!-- layout: section -->` を書いた枚はセクション見出し
   - カレンダー表: ヘッダーが「日 | 月 | 火 | 水 | 木 | 金 | 土 | この週のこと」の表は
     月のカレンダーとして描く（後述）
+  - 表は表スライドにだけ置ける。表スライドには箇条書き・本文を書けない。
+    どちらも内容が消えるのを防ぐため、違反するとエラーで止める
 
 使い方（リポジトリルートで）:
   python scripts/build_kotonara_theme_pptx.py <md> [-o out.pptx] [--footer 文言] [--no-logo] [--draft]
@@ -42,7 +44,9 @@ build_kotonara_theme_pptx.py
   |  |  | 1 | 2 | 3 | 4 | 5 |  |
   | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 資料のご提出（11日まで） |
   | 13 | 14 | 15 | 16 | 17 | 18 | 19 当日 | 当日：11:00 ご入場 |
-  - 日付セルは「19」または「19 ラベル」。ラベル付きはベージュ、ラベルに「当日」を含むと緑で塗る
+  - 日付セルは「19」または「19 ラベル」（空白は全角でもよい）。ラベル付きはベージュ、
+    ラベルに「当日」を含むと緑で塗る
+  - 列はヘッダーと同じ8列。ヘッダーのほかに1行以上の週が要る
   - 空セルは月の外（灰色）
   - 「この週のこと」が縦に同じ文言で続くと、セルを結合する
 """
@@ -59,6 +63,7 @@ import zipfile
 
 from lxml import etree
 from pptx import Presentation
+from pptx.enum.shapes import PP_PLACEHOLDER
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.opc.constants import RELATIONSHIP_TYPE as RT
 from pptx.opc.package import Part
@@ -85,6 +90,7 @@ A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main"
 
 LAYOUT_RE = re.compile(r"<!--\s*layout:\s*(\w+)\s*-->")
 WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"]
+DAY_LABEL_RE = re.compile(r"[\s\u3000]+")   # 日付とラベルの区切り（全角空白も可）
 
 
 def load_base(footer: str):
@@ -107,18 +113,18 @@ class Logo:
     """ロゴの PNG（表示用）と SVG（高画質版）。SVG のパートはデッキ内で1つを共有する。"""
 
     def __init__(self, png, svg):
+        from PIL import Image
+
         self.png, self.svg = png, svg
         self._svg_part = None
-
-    def ratio(self):
-        from PIL import Image
-        w, h = Image.open(self.png).size
-        return w / h
+        with Image.open(png) as im:
+            w, h = im.size
+        self.ratio = w / h
 
     def add_to_layout(self, prs, layout, x, y, height, name="ことテク ロゴ"):
         from pptx.oxml.shapes.picture import CT_Picture
 
-        width = int(height * self.ratio())
+        width = int(height * self.ratio)
         _part, rid_png = layout.part.get_or_add_image_part(self.png)
         tree = layout.shapes._spTree
         ids = [int(e.get("id")) for e in tree.iter() if e.tag.endswith("}cNvPr") and e.get("id")]
@@ -145,7 +151,7 @@ def place_logos(B, prs):
     # 表紙: 帯の左に白いロゴ。キャッチコピーはロゴの右、下端をロゴの下端にそろえる
     band_h = B.SH - B.CV_BAND_Y
     cover_h = int(band_h * 0.62)
-    cover_w = int(cover_h * white.ratio())
+    cover_w = int(cover_h * white.ratio)
     gap = B.inch(0.12)
     margin = (band_h - cover_h) // 2
     cover_layout = prs.slide_layouts[B.L_COVER]
@@ -159,9 +165,16 @@ def place_logos(B, prs):
 
     # 本文・表・セクション見出し: 右上。右端はコンテンツ幅の右端にそろえる
     top_h = B.inch(0.50)
-    top_w = int(top_h * logo.ratio())
+    top_w = int(top_h * logo.ratio)
     for li in (B.L_CONTENT, B.L_TABLE, B.L_SECTION):
         logo.add_to_layout(prs, prs.slide_layouts[li], B.ML + B.CW - top_w, B.inch(0.40), top_h)
+
+    # 本文・表はタイトル枠が全幅でロゴと重なるので、ロゴの左で折り返すよう幅を縮める
+    # （セクション見出しのタイトルはロゴより下にあるので縮めない）
+    for li in (B.L_CONTENT, B.L_TABLE):
+        for sp in prs.slide_layouts[li].placeholders:
+            if sp.placeholder_format.type == PP_PLACEHOLDER.TITLE:
+                sp.width = Emu(B.CW - top_w - gap)
 
 
 # =============================================================================
@@ -169,7 +182,20 @@ def place_logos(B, prs):
 # =============================================================================
 
 def is_calendar(table) -> bool:
-    return bool(table) and table[0][:7] == WEEKDAYS
+    """ヘッダーが曜日7列で始まる表をカレンダーとみなす。形が崩れていればエラーで止める。"""
+    if not table or table[0][:7] != WEEKDAYS:
+        return False
+    n_cols = len(WEEKDAYS) + 1
+    if len(table[0]) != n_cols:
+        raise SystemExit(f"カレンダー表のヘッダーは「{' | '.join(WEEKDAYS)} | この週のこと」"
+                         f"の{n_cols}列にしてください（実際={len(table[0])}列）")
+    if len(table) < 2:
+        raise SystemExit("カレンダー表にヘッダーのほか1行以上の週を書いてください")
+    bad = [r for r, row in enumerate(table) if len(row) != n_cols]
+    if bad:
+        raise SystemExit(f"カレンダー表の {', '.join(str(r + 1) for r in bad)} 行目の列数が"
+                         f"ヘッダーの{n_cols}列と合いません")
+    return True
 
 
 def add_calendar(B, slide, rows):
@@ -226,7 +252,7 @@ def add_calendar(B, slide, rows):
                 B.cell_fill(cell, "accent6", alpha=6000)   # 月の外
                 continue
 
-            day, _, label = value.partition(" ")
+            day, label = (DAY_LABEL_RE.split(value.strip(), maxsplit=1) + [""])[:2]
             is_event_day = "当日" in label
             if is_event_day:
                 B.cell_fill(cell, "accent1")
@@ -267,22 +293,32 @@ def add_calendar(B, slide, rows):
 # =============================================================================
 
 def parse(B, md_path):
-    """元スクリプトの parse_markdown に、`<!-- layout: ... -->` の指定を足す。"""
+    """元スクリプトの parse_markdown に、`<!-- layout: ... -->` の指定を足す。
+
+    指定はスライドごとに取り出して消してから元の parse_markdown に渡す。
+    指定だけで中身のない枚はエラーにする（数え方がずれて別の枚に効くのを防ぐ）。
+    元の parse_markdown はパスしか受け取らず、元ファイルは書き換えないので一時ファイルを使う。
+    """
     with open(md_path, encoding="utf-8") as fh:
         text = fh.read()
-    blocks = [b for b in re.split(r"^---\s*$", text, flags=re.M) if b.strip()]
-    layouts = []
-    for b in blocks:
+    blocks, layouts = [], []
+    for b in re.split(r"^---\s*$", text, flags=re.M):
+        if not b.strip():
+            continue
         m = LAYOUT_RE.search(b)
+        b = LAYOUT_RE.sub("", b)
+        if not b.strip():
+            raise SystemExit(f"{len(blocks) + 1} 枚目: レイアウト指定だけで中身がありません")
+        blocks.append(b)
         layouts.append(m.group(1) if m else None)
-    stripped = LAYOUT_RE.sub("", text)
     with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False, encoding="utf-8") as tmp:
-        tmp.write(stripped)
+        tmp.write("\n---\n".join(blocks))
     try:
         specs = B.parse_markdown(tmp.name)
     finally:
         os.remove(tmp.name)
-    assert len(specs) == len(layouts), "スライド区切りの数が合いません"
+    if len(specs) != len(layouts):
+        raise SystemExit(f"スライド区切りの数が合いません（md={len(layouts)}, 読み込み={len(specs)}）")
     return specs, layouts
 
 
@@ -302,6 +338,17 @@ def layout_index(B, idx, last, spec, override):
     return B.L_CONTENT
 
 
+def check_content_fits(B, idx, spec, li):
+    """レイアウトに入らない内容があれば、黙って捨てずにエラーで止める。"""
+    where = f"{idx + 1} 枚目「{spec.title}」"
+    if spec.table and li != B.L_TABLE:
+        raise SystemExit(f"{where}: 表は表スライドにしか置けません。表を別の枚に分けるか、"
+                         "表紙・最後の枚・レイアウト指定のある枚から表を外してください")
+    if li == B.L_TABLE and (spec.items or spec.paras):
+        raise SystemExit(f"{where}: 表スライドには箇条書き・本文を書けません。"
+                         "別の枚に分けるか、ノート（<!-- note: ... -->）に移してください")
+
+
 def build_deck(B, specs, layouts, path, with_logo=True, doc_title=None):
     prs = B.open_base()
     if with_logo:
@@ -314,6 +361,7 @@ def build_deck(B, specs, layouts, path, with_logo=True, doc_title=None):
 
     for idx, spec in enumerate(specs):
         li = layout_index(B, idx, last, spec, layouts[idx])
+        check_content_fits(B, idx, spec, li)
         layout = prs.slide_layouts[li]
         slide = prs.slides.add_slide(layout)
         B.fill_title(slide, spec.title)
@@ -397,7 +445,8 @@ def verify(B, path, specs, draft, with_logo=True):
 
     check(f"スライド数 = md の枚数 {len(specs)}", len(prs.slides) == len(specs))
     titles = [s.shapes.title.text_frame.text for s in prs.slides]
-    check("タイトルが md と一致", titles == [s.title for s in specs])
+    md_titles = [B.BOLD_RE.sub(lambda m: m.group(0)[2:-2], s.title) for s in specs]
+    check("タイトルが md と一致（`**` は外して比較）", titles == md_titles)
     text = B._all_text(prs)
     check("`**` 残骸なし", "**" not in text)
     check("`<!--` 残骸なし", "<!--" not in text and "-->" not in text)

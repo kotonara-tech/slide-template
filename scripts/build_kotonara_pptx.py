@@ -71,7 +71,7 @@ CONFIG = {
         "cover_title":     34,
         "cover_subtitle":  17,
         "cover_body":      16,
-        "cover_catch":     13,   # 表紙の帯のキャッチコピー（ロゴなし版2もメインに合わせて 13pt）
+        "cover_catch":     15,   # 表紙の帯のキャッチコピー（本編。ロゴなし版2は TEMPLATE_COVER_CATCH_PT）
         "title":           30,
         "body":            18,
         "body_large":      20,
@@ -1105,8 +1105,16 @@ TEMPLATE_SAMPLE = {
 }
 
 
+TEMPLATE_COVER_CATCH_PT = 13   # ロゴなし版2はメインの雛形に合わせて 13pt（本編は CONFIG のまま）
+
+
 def build_template(path):
-    prs = open_base()
+    sizes = CONFIG["sizes"]
+    deck_catch, sizes["cover_catch"] = sizes["cover_catch"], TEMPLATE_COVER_CATCH_PT
+    try:
+        prs = open_base()
+    finally:
+        sizes["cover_catch"] = deck_catch
     prs.core_properties.title = "ことならテック ブランドテンプレート"
     prs.core_properties.author = CONFIG["doc_author"]
     layout = prs.slide_layouts[L_COVER]

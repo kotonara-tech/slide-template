@@ -6,7 +6,8 @@ build_kotonara_pptx.py
 
 生成物:
   1. kototech-aug-hackathon-kickoff-kotonara.pptx  … 本編19枚
-  2. kotonara-brand-template.pptx                   … 同一テーマ／マスターの空テンプレート
+  2. kotonara-brand-template-nologo-2.pptx          … 同一テーマ／マスターの空テンプレート（ロゴなし版2）
+     ※ メインの kotonara-brand-template.pptx とロゴなし版1は build_kotonara_theme_pptx.py で作る
 
 配色・フォントを変えたいときは、下の CONFIG だけを書き換えて再実行すればよい。
 theme1.xml のカラースキーム／フォントスキームとして書き出されるため、
@@ -70,7 +71,7 @@ CONFIG = {
         "cover_title":     34,
         "cover_subtitle":  17,
         "cover_body":      16,
-        "cover_catch":     15,
+        "cover_catch":     15,   # 表紙の帯のキャッチコピー（本編。ロゴなし版2は TEMPLATE_COVER_CATCH_PT）
         "title":           30,
         "body":            18,
         "body_large":      20,
@@ -96,7 +97,7 @@ CONFIG = {
 BASE_DIR      = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MD_PATH       = os.path.join(BASE_DIR, "kototech-aug-hackathon-kickoff-slides.md")
 DECK_PATH     = os.path.join(BASE_DIR, "kototech-aug-hackathon-kickoff-kotonara.pptx")
-TEMPLATE_PATH = os.path.join(BASE_DIR, "kotonara-brand-template.pptx")
+TEMPLATE_PATH = os.path.join(BASE_DIR, "kotonara-brand-template-nologo-2.pptx")
 
 
 # =============================================================================
@@ -1104,8 +1105,16 @@ TEMPLATE_SAMPLE = {
 }
 
 
+TEMPLATE_COVER_CATCH_PT = 13   # ロゴなし版2はメインの雛形に合わせて 13pt（本編は CONFIG のまま）
+
+
 def build_template(path):
-    prs = open_base()
+    sizes = CONFIG["sizes"]
+    deck_catch, sizes["cover_catch"] = sizes["cover_catch"], TEMPLATE_COVER_CATCH_PT
+    try:
+        prs = open_base()
+    finally:
+        sizes["cover_catch"] = deck_catch
     prs.core_properties.title = "ことならテック ブランドテンプレート"
     prs.core_properties.author = CONFIG["doc_author"]
     layout = prs.slide_layouts[L_COVER]
